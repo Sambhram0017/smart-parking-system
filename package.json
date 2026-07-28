@@ -1,4 +1,10 @@
 {
+  "name": "smart-parking-system",
+  "version": "1.0.0",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "node backend/server.js"
+  },
   "dependencies": {
     "cors": "^2.8.6",
     "crypto": "^1.0.1",
