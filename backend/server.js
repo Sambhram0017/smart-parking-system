@@ -10,29 +10,33 @@ app.use(cors());
 app.use(express.json());
 
 // ==============================
-// MySQL Connection Config (Supports Local & Cloud Databases)
+// MySQL Connection Pool (Supports Railway, Render & Local Databases)
 // ==============================
-const dbConfig = (process.env.DATABASE_URL || process.env.MYSQL_URL)
-    ? (process.env.DATABASE_URL || process.env.MYSQL_URL)
+const host     = process.env.MYSQLHOST || process.env.DB_HOST || "localhost";
+const user     = process.env.MYSQLUSER || process.env.DB_USER || "root";
+const password = process.env.MYSQLPASSWORD || process.env.DB_PASSWORD || "";
+const database = process.env.MYSQLDATABASE || process.env.DB_NAME || "railway";
+const port     = process.env.MYSQLPORT || process.env.DB_PORT || 3306;
+
+const dbConfig = (process.env.MYSQL_URL || process.env.DATABASE_URL)
+    ? (process.env.MYSQL_URL || process.env.DATABASE_URL)
     : {
-        host:     process.env.DB_HOST || "localhost",
-        user:     process.env.DB_USER || "root",
-        password: process.env.DB_PASSWORD || "",
-        database: process.env.DB_NAME || "parking_db",
-        port:     process.env.DB_PORT || 3306,
-        ssl:      process.env.DB_SSL === "true" ? { rejectUnauthorized: false } : undefined
+        host:     host,
+        user:     user,
+        password: password,
+        database: database,
+        port:     port,
+        waitForConnections: true,
+        connectionLimit: 10,
+        queueLimit: 0
     };
 
-const db = mysql.createConnection(dbConfig);
+const db = mysql.createPool(dbConfig);
 
-db.connect((err) => {
-    if (err) {
-        console.error("❌ MySQL Connection Failed:", err.message);
-        return;
-    }
-    console.log("✅ MySQL Connected Successfully");
+// Initialize tables and seed default slots
+const initDb = () => {
+    console.log("✅ Initializing MySQL Database Pool...");
 
-    // Auto-create parking_slots table if it doesn't exist
     const createTable = `
         CREATE TABLE IF NOT EXISTS parking_slots (
             id          INT AUTO_INCREMENT PRIMARY KEY,
@@ -47,13 +51,10 @@ db.connect((err) => {
             return;
         }
 
-        // Insert 10 slots only if table is empty
         db.query("SELECT COUNT(*) AS count FROM parking_slots", (err, results) => {
-            if (err || results[0].count > 0) return;
+            if (err || (results && results[0] && results[0].count > 0)) return;
 
-            const slots = Array.from({ length: 10 }, (_, i) =>
-                [i + 1, 0, null]
-            );
+            const slots = Array.from({ length: 10 }, (_, i) => [i + 1, 0, null]);
             db.query(
                 "INSERT INTO parking_slots (slot_number, is_occupied, car_number) VALUES ?",
                 [slots],
@@ -65,7 +66,6 @@ db.connect((err) => {
         });
     });
 
-    // Auto-create vehicles table if it doesn't exist
     const createVehicles = `
         CREATE TABLE IF NOT EXISTS vehicles (
             id         INT AUTO_INCREMENT PRIMARY KEY,
@@ -80,7 +80,9 @@ db.connect((err) => {
         if (err) console.error("❌ Could not create vehicles table:", err.message);
         else console.log("✅ vehicles table ready");
     });
-});
+};
+
+initDb();
 
 // ==============================
 // Razorpay Instance
