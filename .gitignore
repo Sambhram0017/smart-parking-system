@@ -1,0 +1,36 @@
+# Node dependencies
+node_modules/
+backend/node_modules/
+smart_parking_backend/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.env
+
+# Flutter / Dart build artifacts
+smart_parking_app/.dart_tool/
+smart_parking_app/.flutter-plugins
+smart_parking_app/.flutter-plugins-dependencies
+smart_parking_app/.packages
+smart_parking_app/.pub-cache/
+smart_parking_app/.pub/
+smart_parking_app/build/
+smart_parking_app/android/.gradle/
+smart_parking_app/android/app/debug/
+smart_parking_app/android/app/profile/
+smart_parking_app/android/app/release/
+smart_parking_app/ios/Flutter/App.framework
+smart_parking_app/ios/Flutter/Flutter.framework
+smart_parking_app/ios/Flutter/Flutter.podspec
+smart_parking_app/ios/Pods/
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# OS files
+.DS_Store
+Thumbs.db
