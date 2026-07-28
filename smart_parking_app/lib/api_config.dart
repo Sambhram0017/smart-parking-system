@@ -1,9 +1,8 @@
 import 'package:flutter/foundation.dart';
 
 class ApiConfig {
-  /// Set your deployed cloud backend URL here (e.g. "https://smart-parking-backend.onrender.com")
-  /// Leave empty to automatically fallback to localhost (Web) / 10.0.2.2 (Android).
-  static const String customCloudUrl = "";
+  /// Live 24/7 Railway Cloud Backend API
+  static const String customCloudUrl = "https://smart-parking-system-production-884b.up.railway.app";
 
   static String get baseUrl {
     if (customCloudUrl.isNotEmpty) {
