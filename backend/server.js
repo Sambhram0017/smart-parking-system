@@ -279,17 +279,51 @@ app.get("/history", (req, res) => {
 });
 
 // ==============================
-// Reset All Parking Slots
+// Reset All Parking Slots (Available via browser at /reset or /reset-parking)
 // ==============================
-app.get("/reset-parking", (req, res) => {
+const handleReset = (req, res) => {
     db.query(
         "UPDATE parking_slots SET is_occupied = 0, car_number = NULL",
         (err) => {
-            if (err) return res.status(500).json({ success: false, message: "Database Error" });
+            if (err) {
+                console.error("❌ Reset slots failed:", err.message);
+                return res.status(500).json({ success: false, message: "Database Error" });
+            }
+            console.log("✅ All parking slots reset to free");
+            
+            // If requested from browser (HTML), send a formatted webpage
+            if (req.accepts('html')) {
+                return res.send(`
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>Parking Slots Reset</title>
+                        <style>
+                            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0b0f19; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+                            .card { background: #151c2c; padding: 40px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center; border: 1px solid #2a364f; }
+                            h1 { color: #00E676; margin-bottom: 10px; }
+                            p { color: #8f9bba; font-size: 18px; margin-bottom: 30px; }
+                            .badge { background: rgba(0,230,118,0.15); color: #00E676; padding: 8px 16px; border-radius: 20px; font-weight: bold; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="card">
+                            <h1>🚗 Reset Successful!</h1>
+                            <p>All 10 parking slots have been emptied and marked as available.</p>
+                            <span class="badge">Status: All Slots Free</span>
+                        </div>
+                    </body>
+                    </html>
+                `);
+            }
+            
             res.json({ success: true, message: "All slots reset successfully" });
         }
     );
-});
+};
+
+app.get("/reset-parking", handleReset);
+app.get("/reset", handleReset);
 
 // ==============================
 // Start Server
