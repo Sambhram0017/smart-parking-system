@@ -10,15 +10,20 @@ app.use(cors());
 app.use(express.json());
 
 // ==============================
-// MySQL Connection
+// MySQL Connection Config (Supports Local & Cloud Databases)
 // ==============================
-const db = mysql.createConnection({
-    host:     process.env.DB_HOST || "localhost",
-    user:     process.env.DB_USER || "root",
-    password: process.env.DB_PASSWORD || "",
-    database: process.env.DB_NAME || "parking_db",
-    port:     process.env.DB_PORT || 3306
-});
+const dbConfig = (process.env.DATABASE_URL || process.env.MYSQL_URL)
+    ? (process.env.DATABASE_URL || process.env.MYSQL_URL)
+    : {
+        host:     process.env.DB_HOST || "localhost",
+        user:     process.env.DB_USER || "root",
+        password: process.env.DB_PASSWORD || "",
+        database: process.env.DB_NAME || "parking_db",
+        port:     process.env.DB_PORT || 3306,
+        ssl:      process.env.DB_SSL === "true" ? { rejectUnauthorized: false } : undefined
+    };
+
+const db = mysql.createConnection(dbConfig);
 
 db.connect((err) => {
     if (err) {
@@ -336,7 +341,7 @@ app.get("/reset", handleReset);
 // ==============================
 // Start Server
 // ==============================
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
+    console.log(`🚀 Server running on port ${PORT}`);
 });
