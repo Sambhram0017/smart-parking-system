@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:async';
 import 'dart:math' as math;
 import 'api_config.dart';
 
@@ -113,7 +114,7 @@ class _PaymentScreenState extends State<PaymentScreen>
     final paymentId = "pay_web_${DateTime.now().millisecondsSinceEpoch}";
 
     try {
-      final verifyResponse = await http.post(
+      await http.post(
         Uri.parse("${ApiConfig.baseUrl}/verify-payment"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
