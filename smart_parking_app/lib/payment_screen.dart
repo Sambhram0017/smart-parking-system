@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:js' as js;
 import 'api_config.dart';
 
 import 'parking_confirmed_screen.dart'; // ← NEW import
@@ -103,36 +104,97 @@ class _PaymentScreenState extends State<PaymentScreen>
     if (_isProcessing) return;
     setState(() => _isProcessing = true);
 
-    // Fail-safe timer to prevent infinite loading under any circumstance
-    Timer(const Duration(seconds: 3), () {
-      if (mounted && _isProcessing) {
-        setState(() => _isProcessing = false);
-      }
-    });
+    try {
+      // 1. Create Order via Node.js API
+      final response = await http.post(
+        Uri.parse("${ApiConfig.baseUrl}/create-order"),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"amount": widget.amount}),
+      ).timeout(const Duration(seconds: 10));
 
-    final orderId = "order_demo_${DateTime.now().millisecondsSinceEpoch}";
-    final paymentId = "pay_web_${DateTime.now().millisecondsSinceEpoch}";
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final orderId = data['id'] ?? "order_demo_${DateTime.now().millisecondsSinceEpoch}";
+
+        if (kIsWeb) {
+          // Register JS Callbacks for Razorpay Web Modal
+          js.context['onRazorpaySuccess'] = (paymentId, orderId, signature) {
+            _handleWebPaymentSuccess(
+              paymentId?.toString() ?? "pay_web_${DateTime.now().millisecondsSinceEpoch}",
+              orderId?.toString() ?? "",
+              signature?.toString() ?? "demo_signature",
+            );
+          };
+
+          js.context['onRazorpayFailure'] = (errorMsg) {
+            if (mounted) setState(() => _isProcessing = false);
+            _showSnackBar("⚠️ ${errorMsg ?? 'Payment cancelled'}");
+          };
+
+          // Launch Real Official Razorpay Web Modal Window
+          js.context.callMethod('payWithRazorpay', [
+            'rzp_test_T0K6IJBtGZywVM',
+            data['amount'] ?? (widget.amount * 100),
+            orderId,
+            'Smart Parking System',
+            'Parking Fee — Slot S${widget.allocatedSlot}',
+          ]);
+        } else {
+          var options = {
+            'key': 'rzp_test_T0K6IJBtGZywVM',
+            'amount': data['amount'],
+            'name': 'Smart Parking System',
+            'order_id': orderId,
+            'description': 'Parking Fee — Slot S${widget.allocatedSlot}',
+            'prefill': {
+              'contact': '9999999999',
+              'email': 'user@example.com',
+            },
+            'theme': {'color': '#00E5FF'},
+            'modal': {
+              'confirm_close': true,
+              'animation': true,
+            },
+          };
+          _razorpay.open(options);
+        }
+      } else {
+        if (mounted) setState(() => _isProcessing = false);
+        _showSnackBar("⚠️ Could not create Razorpay order.");
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isProcessing = false);
+      _showSnackBar("⚠️ Error launching Razorpay: ${e.toString()}");
+    }
+  }
+
+  void _handleWebPaymentSuccess(String paymentId, String orderId, String signature) async {
+    _showSnackBar("✅ Payment received. Verifying...");
 
     try {
-      await http.post(
+      final verifyResponse = await http.post(
         Uri.parse("${ApiConfig.baseUrl}/verify-payment"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "order_id": orderId,
           "payment_id": paymentId,
-          "signature": "demo_signature",
+          "signature": signature,
           "slot": widget.allocatedSlot,
           "car_number": widget.carNumber,
           "building": widget.buildingName,
         }),
-      ).timeout(const Duration(seconds: 3));
+      );
 
       if (mounted) setState(() => _isProcessing = false);
 
-      _showSuccessDialog(paymentId);
+      if (verifyResponse.statusCode == 200) {
+        _showSuccessDialog(paymentId);
+      } else {
+        _showSnackBar("❌ Verification failed. Contact support.");
+      }
     } catch (e) {
       if (mounted) setState(() => _isProcessing = false);
-      _showSuccessDialog(paymentId);
+      _showSnackBar("❌ Verification network error.");
     }
   }
 

@@ -34,6 +34,53 @@
 
   <!-- Razorpay Checkout SDK for Web -->
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <script>
+    window.payWithRazorpay = function(key, amount, orderId, name, description, onSuccess, onFailure) {
+      var options = {
+        "key": key,
+        "amount": amount,
+        "currency": "INR",
+        "name": name || "Smart Parking System",
+        "description": description || "Parking Fee",
+        "order_id": orderId,
+        "handler": function (response) {
+          console.log("✅ Razorpay payment success:", response);
+          if (window.onRazorpaySuccess) {
+            window.onRazorpaySuccess(response.razorpay_payment_id, response.razorpay_order_id, response.razorpay_signature);
+          }
+        },
+        "modal": {
+          "ondismiss": function() {
+            console.log("⚠️ Razorpay modal dismissed");
+            if (window.onRazorpayFailure) {
+              window.onRazorpayFailure("Payment cancelled by user");
+            }
+          }
+        },
+        "prefill": {
+          "contact": "9876543210",
+          "email": "user@parking.com"
+        },
+        "theme": {
+          "color": "#00E5FF"
+        }
+      };
+      try {
+        var rzp1 = new Razorpay(options);
+        rzp1.on('payment.failed', function (response) {
+          if (window.onRazorpayFailure) {
+            window.onRazorpayFailure(response.error.description || "Payment Failed");
+          }
+        });
+        rzp1.open();
+      } catch (e) {
+        console.error("Razorpay open error:", e);
+        if (window.onRazorpayFailure) {
+          window.onRazorpayFailure(e.message || "Failed to launch Razorpay popup");
+        }
+      }
+    };
+  </script>
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>
