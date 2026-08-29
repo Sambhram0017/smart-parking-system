@@ -41,7 +41,12 @@ const dbConfig = (process.env.MYSQL_URL || process.env.DATABASE_URL)
         queueLimit: 0
     };
 
+// Global exception safety to prevent process exit code 1
+process.on("uncaughtException", (err) => console.warn("⚠️ Uncaught Exception:", err.message));
+process.on("unhandledRejection", (reason) => console.warn("⚠️ Unhandled Rejection:", reason));
+
 const db = mysql.createPool(dbConfig);
+db.on("error", (err) => console.warn("⚠️ MySQL Pool Error:", err.message));
 
 // Initialize tables and seed default slots
 const initDb = () => {
@@ -375,9 +380,9 @@ const handleReset = (req, res) => {
 app.get("/reset-parking", handleReset);
 app.get("/reset", handleReset);
 
-// Single Page Application fallback for Flutter Web
-app.get("*", (req, res, next) => {
-    if (req.path.startsWith("/api") || req.path === "/slots" || req.path === "/entry-check" || req.path === "/create-order" || req.path === "/verify-payment") {
+// Single Page Application fallback for Flutter Web (Express 5 compatible)
+app.use((req, res, next) => {
+    if (req.path.startsWith("/api") || req.path === "/slots" || req.path === "/entry-check" || req.path === "/create-order" || req.path === "/verify-payment" || req.path === "/reset" || req.path === "/reset-parking") {
         return next();
     }
     res.sendFile(path.join(staticPath, "index.html"));
