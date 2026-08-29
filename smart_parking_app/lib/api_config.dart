@@ -2,8 +2,7 @@ import 'package:flutter/foundation.dart';
 
 class ApiConfig {
   /// Live 24/7 Render Cloud Backend API
-  /// Replace with your actual Render service URL after deploying (e.g., https://smart-parking-backend.onrender.com)
-  static const String customCloudUrl = "https://smart-parking-backend.onrender.com";
+  static const String customCloudUrl = "https://smart-parking-backend-ggcj.onrender.com";
 
   static String get baseUrl {
     if (customCloudUrl.isNotEmpty) {
