@@ -3,11 +3,16 @@ const cors    = require("cors");
 const mysql   = require("mysql2");
 const Razorpay = require("razorpay");
 const crypto   = require("crypto");
+const path     = require("path");
 require("dotenv").config();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Serve Flutter Web static files
+const staticPath = path.join(__dirname, "../docs");
+app.use(express.static(staticPath));
 
 // ==============================
 // MySQL Connection Pool (Supports Render, Railway & Cloud MySQL Databases)
@@ -98,9 +103,9 @@ const razorpay = new Razorpay({
 });
 
 // ==============================
-// Home Route
+// Health Check API Route
 // ==============================
-app.get("/", (req, res) => {
+app.get("/api-status", (req, res) => {
     res.send("🚗 Smart Parking API Running...");
 });
 
@@ -355,6 +360,14 @@ const handleReset = (req, res) => {
 
 app.get("/reset-parking", handleReset);
 app.get("/reset", handleReset);
+
+// Single Page Application fallback for Flutter Web
+app.get("*", (req, res, next) => {
+    if (req.path.startsWith("/api") || req.path === "/slots" || req.path === "/entry-check" || req.path === "/create-order" || req.path === "/verify-payment") {
+        return next();
+    }
+    res.sendFile(path.join(staticPath, "index.html"));
+});
 
 // ==============================
 // Start Server
