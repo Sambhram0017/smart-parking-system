@@ -26500,7 +26500,7 @@ b=o}s=b+2
 if(p===s)return s
 if(a.charCodeAt(s)!==47)return q
 return b+3},
-HT(){return"https://smart-parking-system-production-884b.up.railway.app"},
+HT(){return"https://smart-parking-backend-ggcj.onrender.com"},
 aT4(a){var s,r,q,p
 if(a.gv(0)===0)return!0
 s=a.gS(0)
