@@ -10,13 +10,17 @@ app.use(cors());
 app.use(express.json());
 
 // ==============================
-// MySQL Connection Pool (Supports Railway, Render & Local Databases)
+// MySQL Connection Pool (Supports Render, Railway & Cloud MySQL Databases)
 // ==============================
 const host     = process.env.MYSQLHOST || process.env.DB_HOST || "localhost";
 const user     = process.env.MYSQLUSER || process.env.DB_USER || "root";
 const password = process.env.MYSQLPASSWORD || process.env.DB_PASSWORD || "";
-const database = process.env.MYSQLDATABASE || process.env.DB_NAME || "railway";
+const database = process.env.MYSQLDATABASE || process.env.DB_NAME || "smart_parking";
 const port     = process.env.MYSQLPORT || process.env.DB_PORT || 3306;
+
+const sslOption = (process.env.DB_SSL === "true" || process.env.MYSQL_SSL === "true") 
+    ? { rejectUnauthorized: false } 
+    : undefined;
 
 const dbConfig = (process.env.MYSQL_URL || process.env.DATABASE_URL)
     ? (process.env.MYSQL_URL || process.env.DATABASE_URL)
@@ -26,6 +30,7 @@ const dbConfig = (process.env.MYSQL_URL || process.env.DATABASE_URL)
         password: password,
         database: database,
         port:     port,
+        ssl:      sslOption,
         waitForConnections: true,
         connectionLimit: 10,
         queueLimit: 0
@@ -87,10 +92,9 @@ initDb();
 // ==============================
 // Razorpay Instance
 // ==============================
-// TODO: Replace with your actual Razorpay Key ID and Key Secret
 const razorpay = new Razorpay({
-    key_id:     "rzp_test_T0K6IJBtGZywVM",
-    key_secret: "AkK4pOjVq9Equby9NNdkCde2"   // ← replace this
+    key_id:     process.env.RAZORPAY_KEY_ID || "rzp_test_T0K6IJBtGZywVM",
+    key_secret: process.env.RAZORPAY_KEY_SECRET || "AkK4pOjVq9Equby9NNdkCde2"
 });
 
 // ==============================
